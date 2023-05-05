@@ -6,6 +6,8 @@ def start():
     from ammoc import ammoc
     from sword import sword
     from wall import wall
+    from betterAlien import betterAlien
+    import json
 
 
     pygame.init()
@@ -84,7 +86,35 @@ def start():
         wally.append(playery)
         wallhealth.append(5)
 
-    def newalien():
+    def checkpause():
+        print("pause")
+
+    bAX = []
+    bAY = []
+    bAH = []
+
+    def newBetterAlien(px, py):
+        balrx = randrange(1, 700)
+        balry = randrange(1, 700)
+
+        moreLess = randrange(0,10)
+        if moreLess < 5:
+            balrx = randrange(1, 700)
+            balry = randrange(1, 300)
+        else:
+            balrx = randrange(100, 700)
+            balry = randrange(500, 700)
+ 
+        if balrx <= px-50 and balrx >= px + 50:
+            balrx = randrange(100, 700)
+        if balry <= py-50 and balry >= py + 150:
+            balry = randrange(100, 700)
+
+        bAX.append(balrx)
+        bAY.append(balry)
+        bAH.append(2)
+
+    def newalien(px, py):
         alrx = randrange(1, 700)
         alry = randrange(1, 700)
 
@@ -95,7 +125,12 @@ def start():
         if more_less >= 5:
             alrx = randrange(100, 700)
             alry = randrange(500, 700)
-            
+ 
+        if alrx <= px-50 and alrx >= px + 50:
+            alrx = randrange(100, 700)
+        if alry <= py-50 and alry >= py + 150:
+            alry = randrange(100, 700)
+
         ax.append(alrx)
         ay.append(alry)
 
@@ -120,6 +155,9 @@ def start():
         for i in range(len(ay)):
             screen.blit(alien.alienImg, (ax[i], ay[i], alien.ah, alien.aw))
 
+        for i in range(len(bAY)):
+            screen.blit(betterAlien.alienImg, (bAX[i], bAY[i], betterAlien.ah, betterAlien.aw))
+
         for i in range(len(wallx)):
             screen.blit(wall.wallImg, (wallx[i], wally[i], wall.wallw, wall.wallw))
 
@@ -140,6 +178,7 @@ def start():
         screen.blit(secstext, secstextrect)
         screen.blit(weaponstext, weaponstextrect)
         screen.blit(ultstext, ultstextrect)
+        screen.blit(highscoretesxt, highscorerect)
 
         pygame.display.update()
 
@@ -156,7 +195,9 @@ def start():
     waittt = 0
     waitttt = 0
     pcam = "u"
-    newalien()
+
+    newalien(x,y)
+    newBetterAlien(x,y)
     newammo()
 
     dwall = pygame.draw.rect(screen, (155,155,155), (0, 798, 800, 2), 0)
@@ -174,12 +215,23 @@ def start():
     minaliensspawn = 1
 
     weapon = 1
-    weapontext = "Melee"
+    WeaponIntext = "Range"
+
 
     screen.blit(playerup, (x,y,h,w))
 
     go = True
     while go:
+
+        with open('Highscore.json') as f:
+            data = json.load(f)
+        
+        highscorekills = data['Kills']
+
+        if kill > highscorekills:
+            data['Kills'] = kill
+            with open('Highscore.json', 'w') as f:
+                json.dump(data, f)
 
         font1 = pygame.font.SysFont('freesanbold.ttf', 30)
 
@@ -195,13 +247,17 @@ def start():
         secstextrect = secstext.get_rect()
         secstextrect.topleft = (450, 25)
 
-        weaponstext = font1.render(f'Weapon : {weapon}', True, (0, 255, 0))
+        weaponstext = font1.render(f'Weapon : {WeaponIntext}', True, (0, 255, 0))
         weaponstextrect = weaponstext.get_rect()
         weaponstextrect.topleft = (250, 25)
 
         ultstext = font1.render(f'Ultimate : {ult_power}    100 = Ready', True, (0, 255, 0))
         ultstextrect = ultstext.get_rect()
         ultstextrect.topleft = (50, 50)
+
+        highscoretesxt = font1.render(f"Meisten Kills: {highscorekills}", True, (0, 255, 0))
+        highscorerect = highscoretesxt.get_rect()
+        highscorerect.topleft = (350, 50) 
 
         if waitt >= 0 and waitt != 500:
             waitt += 1
@@ -237,20 +293,32 @@ def start():
             if ay[i] > playery - 20:
                 ay[i] -= 0.5
 
+
+        #movement betteralien
+        for i in range(len(bAX)):
+            if bAX[i] < playerx - 20:
+                bAX[i] += 0.5
+            if bAX[i] > playerx - 20:
+                bAX[i] -= 0.5
+        for i in range(len(bAY)):
+            if bAY[i] < playery - 20:
+                bAY[i] += 0.5
+            if bAY[i] > playery - 20:
+                bAY[i] -= 0.5
+
         for ai in range(len(ay)):
             if ai >= len(ay):
                 break
             alienrect = pygame.Rect(ax[ai], ay[ai], alien.aw, alien.ah)
             if alienrect.colliderect(playerrect):
-                sys.exit()
+                go = False
+                #sys.exit()
             for i in range(len(byu)):
                 byurect = pygame.Rect(bxu[i], byu[i], bullet.h, bullet.w)
                 if byurect.colliderect(alienrect):
                     ax.pop(ai)
                     ay.pop(ai)
                     kill += 1
-
-
 
             for i in range(len(byd)):
                 bydrect = pygame.Rect(bxd[i], byd[i], bullet.h, bullet.w)
@@ -273,6 +341,69 @@ def start():
                     ay.pop(ai)
                     kill += 1
 
+
+        for ai in range(len(bAY)):
+            if ai >= len(bAY):
+                break
+            alienrect = pygame.Rect(bAX[ai], bAY[ai], betterAlien.aw, betterAlien.ah)
+
+            if alienrect.colliderect(playerrect):
+                go = False
+            for i in range(len(byu)):
+                byurect = pygame.Rect(bxu[i], byu[i], bullet.h, bullet.w)
+                if byurect.colliderect(alienrect):
+                    if bAH[ai] == 2:
+                        bAH[ai] = 1
+                        byu.pop(i)
+                        bxu.pop(i)
+                    elif bAH[ai] == 1:
+                        bAX.pop(ai)
+                        bAY.pop(ai)
+                        bAH.pop(ai)
+                        kill += 1
+
+
+            for i in range(len(byd)):
+                bydrect = pygame.Rect(bxd[i], byd[i], bullet.h, bullet.w)
+                if bydrect.colliderect(alienrect):
+                    if bAH[ai] == 2:
+                        bAH[ai] = 1
+                        byd.pop(i)
+                        bxd.pop(i)
+                    elif bAH[ai] == 1:
+                        bAX.pop(ai)
+                        bAY.pop(ai)
+                        bAH.pop(ai)
+                        kill += 1
+
+            for i in range(len(byr)):
+                byrrect = pygame.Rect(bxr[i], byr[i], bullet.h, bullet.w)
+                if byrrect.colliderect(alienrect):
+                    if bAH[ai] == 2:
+                        bAH[ai] = 1
+                        byr.pop(i)
+                        bxr.pop(i)
+                    elif bAH[ai] == 1:
+                        bAX.pop(ai)
+                        bAY.pop(ai)
+                        bAH.pop(ai)
+                        kill += 1
+
+            for i in range(len(byl)):
+                bylrect = pygame.Rect(bxl[i], byl[i], bullet.h, bullet.w)
+                if bylrect.colliderect(alienrect):
+                    if bAH[ai] == 2:
+                        byl.pop(i)
+                        bxl.pop(i)
+                        bAH[ai] = 1
+                    elif bAH[ai] == 1:
+                        bAX.pop(ai)
+                        bAY.pop(ai)
+                        bAH.pop(ai)
+                        kill += 1
+
+
+
         for i in range(len(wallx)):
             if i >= len(wallx):
                 break
@@ -292,8 +423,6 @@ def start():
 
 
 
-
-
         for i in range(len(byu)):
             byu[i] -= 7
         for i in range(len(byd)):
@@ -305,8 +434,6 @@ def start():
 
 
 
-
-
         for event in pygame.event.get():
             if event.type == pygame.QUIT : sys.exit()
 
@@ -314,8 +441,10 @@ def start():
 
         if pr[pygame.K_1]: # range
             weapon = 1
+            WeaponIntext = "Range"
         if pr[pygame.K_2]: # melee
             weapon = 2
+            WeaponIntext = "Melee"
 
         mouse_presses = pygame.mouse.get_pressed()
 
@@ -383,7 +512,10 @@ def start():
                 ult_power += 10
 
             for i in range(randrange(minaliensspawn,maxaliensspawn)):
-                newalien()
+                if randrange(0,2) == 1:
+                    newalien(x,y)
+                else:
+                    newBetterAlien(x,y)
 
 
             if ammo > 0:
@@ -422,6 +554,9 @@ def start():
             ult_power = 0
             ay.clear()
             ax.clear()
+            bAY.clear()
+            bAX.clear()
+            bAH.clear()
 
 
         draw()
